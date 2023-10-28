@@ -11,15 +11,17 @@ datasource db {
 }
 
 model User {
-    id              Int     @id @default(autoincrement())
-    name            String
-    email           String  @unique
-    password        String
-    type            String // 'professor' or 'student'
-    class           Class?  @relation(fields: [classId], references: [id])
-    classId         Int?
-    studentDoubts   Doubt[] @relation("StudentDoubt")
-    professorDoubts Doubt[] @relation("ProfessorDoubt")
+    id            Int        @id @default(autoincrement())
+    name          String
+    email         String     @unique
+    password      String
+    type          String // 'teacher' or 'student'
+    class         Class?     @relation(fields: [classId], references: [id])
+    classId       Int?
+    studentDoubts Doubt[]    @relation("StudentDoubt")
+    teacherDoubts Doubt[]    @relation("TeacherDoubt")
+    UserTask      UserTask[]
+    Doubt         Doubt[]
 }
 
 model Class {
@@ -31,25 +33,39 @@ model Class {
 }
 
 model Task {
-    id               Int       @id @default(autoincrement())
-    classId          Int
-    classroom        Class     @relation(fields: [classId], references: [id])
-    title            String
-    description      String
-    deadline         DateTime
-    deliveredDate    DateTime?
-    doubtsAndAnswers Doubt[]
+    id          Int        @id @default(autoincrement())
+    classId     Int
+    classroom   Class      @relation(fields: [classId], references: [id])
+    title       String
+    description String
+    deadline    DateTime
+    UserTask    UserTask[]
+    Doubt       Doubt[]
+}
+
+model UserTask {
+    id          Int      @id @default(autoincrement())
+    userId      Int
+    user        User     @relation(fields: [userId], references: [id])
+    taskId      Int
+    task        Task     @relation(fields: [taskId], references: [id])
+    deliveredAt DateTime
+    content     String
 }
 
 model Doubt {
-    id          Int    @id @default(autoincrement())
-    taskId      Int
-    task        Task   @relation(fields: [taskId], references: [id])
-    student     User?  @relation("StudentDoubt", fields: [studentId], references: [id])
-    studentId   Int?
-    professor   User?  @relation("ProfessorDoubt", fields: [professorId], references: [id])
-    professorId Int?
-    message     String
+    id        Int       @id @default(autoincrement())
+    taskId    Int
+    task      Task      @relation(fields: [taskId], references: [id])
+    student   User?     @relation("StudentDoubt", fields: [studentId], references: [id])
+    studentId Int?
+    teacher   User?     @relation("TeacherDoubt", fields: [teacherId], references: [id])
+    teacherId Int?
+    message   String
+    type      String
+    User      User?     @relation(fields: [userId], references: [id])
+    userId    Int?
+    createdAt DateTime? @default(now())
 }
 
 model Event {
@@ -60,10 +76,10 @@ model Event {
 }
 
 model Schedule {
-    id        Int      @id @default(autoincrement())
+    id        Int    @id @default(autoincrement())
     classId   Int
-    classroom Class    @relation(fields: [classId], references: [id])
+    classroom Class  @relation(fields: [classId], references: [id])
     day       String
-    time      DateTime
+    time      String
     subject   String
 }

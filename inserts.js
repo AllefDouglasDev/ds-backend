@@ -1,5 +1,5 @@
-const { PrismaClient } = require('@prisma/client');
-const bcrypt = require('bcrypt');
+const { PrismaClient } = require("@prisma/client");
+const bcrypt = require("bcrypt");
 
 const prisma = new PrismaClient();
 
@@ -16,7 +16,7 @@ const classesToInsert = [
   "3° TDS 'A'",
   "3° TDS 'B'",
   "3° MKT 'A'",
-  "3° MKT 'B'"
+  "3° MKT 'B'",
 ];
 
 async function createClasses() {
@@ -24,15 +24,15 @@ async function createClasses() {
     await prisma.class.create({
       data: {
         name: className,
-      }
+      },
     });
     console.log(`Classe ${className} inserida com sucesso.`);
   }
 }
 
 async function createStudent() {
-  const email = 'estudante@email.com';
-  const password = 'secret123'; // Senha não criptografada
+  const email = "estudante@email.com";
+  const password = "secret123"; // Senha não criptografada
   const hashedPassword = await bcrypt.hash(password, 10);
   try {
     const classId = 1;
@@ -42,15 +42,15 @@ async function createStudent() {
       },
     });
     if (!existingClass) {
-      console.error('A turma de ID 1 não existe.');
+      console.error("A turma de ID 1 não existe.");
       return;
     }
     const student = await prisma.user.create({
       data: {
-        name: 'Joao',
+        name: "Joao",
         email,
         password: hashedPassword, // Senha criptografada
-        type: 'student',
+        type: "student",
         class: {
           connect: {
             id: classId,
@@ -59,30 +59,100 @@ async function createStudent() {
       },
     });
 
-    console.log('Estudante criado com sucesso:', student);
+    console.log("Estudante criado com sucesso:", student);
   } catch (error) {
-    console.error('Erro ao criar o estudante:', error);
+    console.error("Erro ao criar o estudante:", error);
   } finally {
     await prisma.$disconnect();
   }
 }
 
 async function createTeacher() {
-  const email = 'professor@email.com';
-  const password = 'secret123'; // Senha não criptografada
+  const email = "professor@email.com";
+  const password = "secret123"; // Senha não criptografada
   const hashedPassword = await bcrypt.hash(password, 10);
   try {
     const student = await prisma.user.create({
       data: {
-        name: 'Maria',
+        name: "Maria",
         email,
         password: hashedPassword, // Senha criptografada
-        type: 'teacher',
+        type: "teacher",
       },
     });
-    console.log('Professor criado com sucesso:', student);
+    console.log("Professor criado com sucesso:", student);
   } catch (error) {
-    console.error('Erro ao criar o professor:', error);
+    console.error("Erro ao criar o professor:", error);
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+async function createTeacher() {
+  const email = "professor@email.com";
+  const password = "secret123"; // Senha não criptografada
+  const hashedPassword = await bcrypt.hash(password, 10);
+  try {
+    const student = await prisma.user.create({
+      data: {
+        name: "Maria",
+        email,
+        password: hashedPassword, // Senha criptografada
+        type: "teacher",
+      },
+    });
+    console.log("Professor criado com sucesso:", student);
+  } catch (error) {
+    console.error("Erro ao criar o professor:", error);
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+async function createSchedule() {
+  try {
+    const classId = 1;
+    const subjects = [
+      "Matemática",
+      "História",
+      "Português",
+      "Ciências",
+      "Geografia",
+    ];
+    const times = [
+      "7:30",
+      "8:20",
+      "9:10",
+      "9:30",
+      "10:20",
+      "11:10",
+      "12:00",
+      "13:20",
+      "14:10",
+      "15:00",
+      "15:20",
+      "16:10",
+    ];
+    const days = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta"];
+    for (const day of days) {
+      for (const time of times) {
+        let subject = subjects[Math.floor(Math.random() * subjects.length)];
+        if (time === "9:10" || time === "12:00" || time === "15:00") {
+          subject = "Intervalo";
+        }
+        await prisma.schedule.create({
+          data: {
+            classId,
+            day,
+            time,
+            subject,
+          },
+        });
+      }
+    }
+    console.log("Schedules created successfully.");
+  } catch (error) {
+    console.error("Error:", error);
   } finally {
     await prisma.$disconnect();
   }
@@ -92,6 +162,7 @@ async function main() {
   await createClasses();
   await createStudent();
   await createTeacher();
+  await createSchedule();
 }
 
 main()
