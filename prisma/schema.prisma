@@ -1,0 +1,69 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "mysql"
+    url      = env("DATABASE_URL")
+}
+
+model User {
+    id              Int     @id @default(autoincrement())
+    name            String
+    email           String  @unique
+    password        String
+    type            String // 'professor' or 'student'
+    class           Class?  @relation(fields: [classId], references: [id])
+    classId         Int?
+    studentDoubts   Doubt[] @relation("StudentDoubt")
+    professorDoubts Doubt[] @relation("ProfessorDoubt")
+}
+
+model Class {
+    id       Int        @id @default(autoincrement())
+    name     String
+    users    User[]
+    tasks    Task[]
+    Schedule Schedule[]
+}
+
+model Task {
+    id               Int       @id @default(autoincrement())
+    classId          Int
+    classroom        Class     @relation(fields: [classId], references: [id])
+    title            String
+    description      String
+    deadline         DateTime
+    deliveredDate    DateTime?
+    doubtsAndAnswers Doubt[]
+}
+
+model Doubt {
+    id          Int    @id @default(autoincrement())
+    taskId      Int
+    task        Task   @relation(fields: [taskId], references: [id])
+    student     User?  @relation("StudentDoubt", fields: [studentId], references: [id])
+    studentId   Int?
+    professor   User?  @relation("ProfessorDoubt", fields: [professorId], references: [id])
+    professorId Int?
+    message     String
+}
+
+model Event {
+    id    Int       @id @default(autoincrement())
+    title String
+    start DateTime
+    end   DateTime?
+}
+
+model Schedule {
+    id        Int      @id @default(autoincrement())
+    classId   Int
+    classroom Class    @relation(fields: [classId], references: [id])
+    day       String
+    time      DateTime
+    subject   String
+}
