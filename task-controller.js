@@ -32,7 +32,18 @@ async function list(req, res, prisma) {
       classId: user.class.id,
     },
   });
-  return res.json(tasks);
+  const userTasks = await prisma.userTask.findMany({
+    where: { userId },
+  });
+  const transformedTasks = tasks.map((task) => {
+    const userTask = userTasks.find((userTask) => userTask.taskId === task.id);
+    return {
+      ...task,
+      deliveredAt: userTask?.deliveredAt,
+      content: userTask?.content,
+    };
+  });
+  return res.json(transformedTasks);
 }
 
 async function findOne(req, res, prisma) {
@@ -108,8 +119,10 @@ async function create(req, res, prisma) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
   });
-  if (user.type !== 'teacher') {
-    return res.status(403).json({ message: "Apenas professores podem criar tarefas." });
+  if (user.type !== "teacher") {
+    return res
+      .status(403)
+      .json({ message: "Apenas professores podem criar tarefas." });
   }
   const theClass = await prisma.class.findUnique({
     where: { id: Number(classId) },
@@ -150,7 +163,7 @@ async function createDoubt(req, res, prisma) {
     data.type = "teacher";
   }
   await prisma.doubt.create({ data });
-  return res.send(201);
+  return res.send(204);
 }
 
 async function delivery(req, res, prisma) {
@@ -170,7 +183,7 @@ async function delivery(req, res, prisma) {
       content,
     },
   });
-  return res.send(201);
+  return res.send(204);
 }
 
 async function update(req, res, prisma) {

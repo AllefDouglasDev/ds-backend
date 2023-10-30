@@ -31,8 +31,8 @@ async function createClasses() {
 }
 
 async function createStudent() {
-  const email = "estudante@email.com";
-  const password = "secret123"; // Senha não criptografada
+  const email = "aluno@email.com";
+  const password = "123"; // Senha não criptografada
   const hashedPassword = await bcrypt.hash(password, 10);
   try {
     const classId = 1;
@@ -68,29 +68,8 @@ async function createStudent() {
 }
 
 async function createTeacher() {
-  const email = "professor@email.com";
-  const password = "secret123"; // Senha não criptografada
-  const hashedPassword = await bcrypt.hash(password, 10);
-  try {
-    const student = await prisma.user.create({
-      data: {
-        name: "Maria",
-        email,
-        password: hashedPassword, // Senha criptografada
-        type: "teacher",
-      },
-    });
-    console.log("Professor criado com sucesso:", student);
-  } catch (error) {
-    console.error("Erro ao criar o professor:", error);
-  } finally {
-    await prisma.$disconnect();
-  }
-}
-
-async function createTeacher() {
-  const email = "professor@email.com";
-  const password = "secret123"; // Senha não criptografada
+  const email = "prof@email.com";
+  const password = "123"; // Senha não criptografada
   const hashedPassword = await bcrypt.hash(password, 10);
   try {
     const student = await prisma.user.create({
