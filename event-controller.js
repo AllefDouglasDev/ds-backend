@@ -56,7 +56,7 @@ async function update(req, res, prisma) {
       end,
     },
   });
-  return res.send(204);
+  return res.sendStatus(204);
 }
 
 async function remove(req, res, prisma) {
@@ -70,7 +70,7 @@ async function remove(req, res, prisma) {
   await prisma.event.delete({
     where: { id: Number(id) },
   });
-  return res.send(204);
+  return res.sendStatus(204);
 }
 
 module.exports = eventController;
