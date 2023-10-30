@@ -5,6 +5,7 @@ const { PrismaClient } = require("@prisma/client");
 const eventController = require("./event-controller");
 const scheduleController = require("./schedule-controller");
 const taskController = require("./task-controller");
+const classController = require("./class-controller");
 
 const prisma = new PrismaClient();
 
@@ -21,6 +22,7 @@ app.use("/auth", authController(prisma));
 app.use("/events", eventController(prisma));
 app.use("/schedules", scheduleController(prisma));
 app.use("/tasks", taskController(prisma));
+app.use("/classes", classController(prisma));
 
 app.listen(port, () => {
   console.log(`Server listening at http://localhost:${port}`);
