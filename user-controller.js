@@ -11,7 +11,7 @@ function userController(prisma) {
 }
 
 async function list(req, res, prisma) {
-  const events = await prisma.user.findMany({ where: { type: { equals: req.query.type } } });
+  const events = await prisma.user.findMany({ where: { type: { equals: req.query.type } }, include: { class: true } });
   return res.json(events);
 }
 
