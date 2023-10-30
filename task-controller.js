@@ -64,6 +64,7 @@ async function findOne(req, res, prisma) {
     });
     return res.json({
       ...theTask,
+      studentId: userId,
       doubts,
       deliveredAt: userTask?.deliveredAt,
       content: userTask?.content,
@@ -118,6 +119,7 @@ async function create(req, res, prisma) {
   }
   const theTask = await prisma.task.create({
     data: {
+      teacherId: userId,
       classId,
       title,
       description,

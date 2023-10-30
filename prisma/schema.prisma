@@ -34,10 +34,11 @@ model Class {
 
 model Task {
     id          Int        @id @default(autoincrement())
+    teacherId   Int
     classId     Int
     classroom   Class      @relation(fields: [classId], references: [id])
-    title       String
-    description String
+    title       String     @db.VarChar(5000)
+    description String     @db.VarChar(5000)
     deadline    DateTime
     UserTask    UserTask[]
     Doubt       Doubt[]
@@ -50,7 +51,7 @@ model UserTask {
     taskId      Int
     task        Task     @relation(fields: [taskId], references: [id])
     deliveredAt DateTime
-    content     String
+    content     String   @db.VarChar(5000)
 }
 
 model Doubt {
@@ -61,7 +62,7 @@ model Doubt {
     studentId Int?
     teacher   User?     @relation("TeacherDoubt", fields: [teacherId], references: [id])
     teacherId Int?
-    message   String
+    message   String    @db.VarChar(5000)
     type      String
     User      User?     @relation(fields: [userId], references: [id])
     userId    Int?
@@ -70,7 +71,7 @@ model Doubt {
 
 model Event {
     id    Int       @id @default(autoincrement())
-    title String
+    title String    @db.VarChar(5000)
     start DateTime
     end   DateTime?
 }
