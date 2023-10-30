@@ -76,5 +76,5 @@ async function remove(req, res, prisma) {
   return res.sendStatus(204);
 }
 
-module.exports = userController;;
+module.exports = userController;
 
