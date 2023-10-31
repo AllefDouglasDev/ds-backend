@@ -1,9 +1,11 @@
 const { Router } = require("express");
 const { verifyToken } = require("./jwt");
+const { lunchSchedules } = require("./lunch-schedules");
 
 function scheduleController(prisma) {
   const router = Router();
   router.get("/", verifyToken, (req, res) => list(req, res, prisma));
+  router.get("/lunch", verifyToken, (req, res) => listLunch(req, res, prisma));
   return router;
 }
 
@@ -27,6 +29,10 @@ async function list(req, res, prisma) {
     },
   });
   return res.json(transformSchedule(schedules));
+}
+
+function listLunch(req, res) {
+  return res.json(lunchSchedules);
 }
 
 function transformSchedule(schedules) {
