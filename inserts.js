@@ -47,7 +47,7 @@ async function createStudent() {
     }
     const student = await prisma.user.create({
       data: {
-        name: "Joao",
+        name: "Joao das Neves",
         email,
         password: hashedPassword, // Senha criptografada
         type: "student",
@@ -68,13 +68,13 @@ async function createStudent() {
 }
 
 async function createTeacher() {
-  const email = "prof@email.com";
+  const email = "professor@email.com";
   const password = "123"; // Senha não criptografada
   const hashedPassword = await bcrypt.hash(password, 10);
   try {
     const student = await prisma.user.create({
       data: {
-        name: "Maria",
+        name: "Maria Aparecida",
         email,
         password: hashedPassword, // Senha criptografada
         type: "teacher",
@@ -90,7 +90,6 @@ async function createTeacher() {
 
 async function createSchedule() {
   try {
-    const classId = 1;
     const subjects = [
       "Matemática",
       "História",
@@ -112,21 +111,23 @@ async function createSchedule() {
       "15:20",
       "16:10",
     ];
-    const days = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta"];
-    for (const day of days) {
-      for (const time of times) {
-        let subject = subjects[Math.floor(Math.random() * subjects.length)];
-        if (time === "9:10" || time === "12:00" || time === "15:00") {
-          subject = "Intervalo";
+    for (let classId = 1; classId <= classesToInsert.length; classId++) {
+      const days = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta"];
+      for (const day of days) {
+        for (const time of times) {
+          let subject = subjects[Math.floor(Math.random() * subjects.length)];
+          if (time === "9:10" || time === "12:00" || time === "15:00") {
+            subject = "Intervalo";
+          }
+          await prisma.schedule.create({
+            data: {
+              classId,
+              day,
+              time,
+              subject,
+            },
+          });
         }
-        await prisma.schedule.create({
-          data: {
-            classId,
-            day,
-            time,
-            subject,
-          },
-        });
       }
     }
     console.log("Schedules created successfully.");
