@@ -24,7 +24,11 @@ async function list(req, res, prisma) {
     include: { class: true },
   });
   if (user.type === "teacher") {
-    const tasks = await prisma.task.findMany();
+    const tasks = await prisma.task.findMany({
+      where: {
+        teacherId: userId,
+      },
+    });
     return res.json(tasks);
   }
   const tasks = await prisma.task.findMany({
