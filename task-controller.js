@@ -1,42 +1,42 @@
 const { Router } = require("express");
 const { verifyToken } = require("./jwt");
 
-function taskController(prisma) {
+function taskController(db) {
   const router = Router();
-  router.get("/", verifyToken, (req, res) => list(req, res, prisma));
-  router.get("/:id", verifyToken, (req, res) => findOne(req, res, prisma));
-  router.post("/", verifyToken, (req, res) => create(req, res, prisma));
+  router.get("/", verifyToken, (req, res) => list(req, res, db));
+  router.get("/:id", verifyToken, (req, res) => findOne(req, res, db));
+  router.post("/", verifyToken, (req, res) => create(req, res, db));
   router.post("/:id/delivery", verifyToken, (req, res) =>
-    delivery(req, res, prisma)
+    delivery(req, res, db)
   );
   router.post("/:id/doubt", verifyToken, (req, res) =>
-    createDoubt(req, res, prisma)
+    createDoubt(req, res, db)
   );
-  router.put("/:id", verifyToken, (req, res) => update(req, res, prisma));
-  router.delete("/:id", verifyToken, (req, res) => remove(req, res, prisma));
+  router.put("/:id", verifyToken, (req, res) => update(req, res, db));
+  router.delete("/:id", verifyToken, (req, res) => remove(req, res, db));
   return router;
 }
 
-async function list(req, res, prisma) {
+async function list(req, res, db) {
   const userId = req.userId;
-  const user = await prisma.user.findUnique({
+  const user = await db.user.findUnique({
     where: { id: userId },
     include: { class: true },
   });
   if (user.type === "teacher") {
-    const tasks = await prisma.task.findMany({
+    const tasks = await db.task.findMany({
       where: {
         teacherId: userId,
       },
     });
     return res.json(tasks);
   }
-  const tasks = await prisma.task.findMany({
+  const tasks = await db.task.findMany({
     where: {
       classId: user.class.id,
     },
   });
-  const userTasks = await prisma.userTask.findMany({
+  const userTasks = await db.userTask.findMany({
     where: { userId },
   });
   const transformedTasks = tasks.map((task) => {
@@ -50,14 +50,14 @@ async function list(req, res, prisma) {
   return res.json(transformedTasks);
 }
 
-async function findOne(req, res, prisma) {
+async function findOne(req, res, db) {
   const { id } = req.params;
   const userId = req.userId;
-  const user = await prisma.user.findUnique({
+  const user = await db.user.findUnique({
     where: { id: userId },
     include: { class: true },
   });
-  const theTask = await prisma.task.findUnique({
+  const theTask = await db.task.findUnique({
     where: { id: Number(id) },
   });
   if (!theTask) {
@@ -65,13 +65,13 @@ async function findOne(req, res, prisma) {
   }
 
   if (user.type === "student") {
-    const doubts = await prisma.doubt.findMany({
+    const doubts = await db.doubt.findMany({
       where: {
         taskId: theTask.id,
         studentId: userId,
       },
     });
-    const [userTask] = await prisma.userTask.findMany({
+    const [userTask] = await db.userTask.findMany({
       where: {
         taskId: theTask.id,
         userId,
@@ -86,18 +86,18 @@ async function findOne(req, res, prisma) {
     });
   }
 
-  const doubts = await prisma.doubt.findMany({
+  const doubts = await db.doubt.findMany({
     where: {
       taskId: theTask.id,
     },
   });
-  const students = await prisma.user.findMany({
+  const students = await db.user.findMany({
     where: {
       classId: theTask.classId,
       type: "student",
     },
   });
-  const userTasks = await prisma.userTask.findMany({
+  const userTasks = await db.userTask.findMany({
     where: {
       taskId: theTask.id,
     },
@@ -117,10 +117,10 @@ async function findOne(req, res, prisma) {
   return res.json({ ...theTask, students: transformedStudents });
 }
 
-async function create(req, res, prisma) {
+async function create(req, res, db) {
   const { classId, title, description, deadline } = req.body;
   const userId = req.userId;
-  const user = await prisma.user.findUnique({
+  const user = await db.user.findUnique({
     where: { id: userId },
   });
   if (user.type !== "teacher") {
@@ -128,13 +128,13 @@ async function create(req, res, prisma) {
       .status(403)
       .json({ message: "Apenas professores podem criar tarefas." });
   }
-  const theClass = await prisma.class.findUnique({
+  const theClass = await db.class.findUnique({
     where: { id: Number(classId) },
   });
   if (!theClass) {
     return res.status(404).json({ message: "Turma não encontrada." });
   }
-  const theTask = await prisma.task.create({
+  const theTask = await db.task.create({
     data: {
       teacherId: userId,
       classId,
@@ -146,11 +146,11 @@ async function create(req, res, prisma) {
   return res.json(theTask);
 }
 
-async function createDoubt(req, res, prisma) {
+async function createDoubt(req, res, db) {
   const { id } = req.params;
   const { to, message } = req.body;
   const userId = req.userId;
-  const user = await prisma.user.findUnique({
+  const user = await db.user.findUnique({
     where: { id: userId },
   });
   const data = {
@@ -166,20 +166,20 @@ async function createDoubt(req, res, prisma) {
     data.studentId = to;
     data.type = "teacher";
   }
-  await prisma.doubt.create({ data });
+  await db.doubt.create({ data });
   return res.send(204);
 }
 
-async function delivery(req, res, prisma) {
+async function delivery(req, res, db) {
   const { id } = req.params;
-  const theTask = await prisma.task.findUnique({
+  const theTask = await db.task.findUnique({
     where: { id: Number(id) },
   });
   if (!theTask) {
     return res.status(404).json({ message: "Tarefa não encontrada." });
   }
   const { content } = req.body;
-  await prisma.userTask.create({
+  await db.userTask.create({
     data: {
       taskId: Number(id),
       userId: req.userId,
@@ -190,16 +190,16 @@ async function delivery(req, res, prisma) {
   return res.send(204);
 }
 
-async function update(req, res, prisma) {
+async function update(req, res, db) {
   const { id } = req.params;
-  const theTask = await prisma.task.findUnique({
+  const theTask = await db.task.findUnique({
     where: { id: Number(id) },
   });
   if (!theTask) {
     return res.status(404).json({ message: "Tarefa não encontrada." });
   }
   const { classId, title, description, deadline } = req.body;
-  await prisma.task.update({
+  await db.task.update({
     where: { id: Number(id) },
     data: {
       classId,
@@ -211,18 +211,18 @@ async function update(req, res, prisma) {
   return res.send(204);
 }
 
-async function remove(req, res, prisma) {
+async function remove(req, res, db) {
   const { id } = req.params;
-  const theTask = await prisma.task.findUnique({
-    where: { id: Number(id) },
-  });
-  if (!theTask) {
-    return res.status(404).json({ message: "Tarefa não encontrada." });
-  }
-  await prisma.task.delete({
-    where: { id: Number(id) },
-  });
-  return res.send(204);
+  db.query("DELETE FROM task WHERE id = ?", [id], (err, result) => {
+    if (err) {
+      res.status(500).json({ message: "Internal Server Error" });
+      return;
+    }
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "Tarefa não encontrada." });
+    }
+    return res.sendStatus(204);
+  })
 }
 
 module.exports = taskController;
