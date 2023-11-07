@@ -4,22 +4,25 @@ const bcrypt = require("bcrypt");
 const { secretKey } = require("./constants");
 const { verifyToken } = require("./jwt");
 
-function authController(prisma) {
+function authController(db) {
   const router = Router();
-  router.post("/login", (req, res) => login(req, res, prisma));
-  router.get("/profile", verifyToken, (req, res) => profile(req, res, prisma));
+  router.post("/login", (req, res) => login(req, res, db));
+  router.get("/profile", verifyToken, (req, res) => profile(req, res, db));
   return router;
 }
 
-async function login(req, res, prisma) {
+async function login(req, res, db) {
   const { email, password } = req.body;
-  try {
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
-    if (!user) {
-      return res.status(401).json({ message: "Usuário não encontrado." });
+  db.query("SELECT * FROM user WHERE email = ?", [email], async (err, result) => {
+    if (err) {
+      res.status(500).json({ message: "Internal Server Error" });
+      return
+    }    
+    if (result.length === 0) {
+      res.status(401).json({ message: "Usuário não encontrado." });
+      return
     }
+    const user = result[0];
     const passwordMatch = await bcrypt.compare(password, user.password);
     if (passwordMatch) {
       const token = jwt.sign({ userId: user.id }, secretKey);
@@ -28,21 +31,23 @@ async function login(req, res, prisma) {
     } else {
       res.status(401).json({ message: "Credenciais inválidas." });
     }
-  } catch (error) {
-    console.error("Error:", error);
-    res.status(500).json({ message: "Internal Server Error" });
-  }
+  })
 }
 
-async function profile(req, res, prisma) {
-  const user = await prisma.user.findUnique({
-    where: { id: req.userId },
-  });
-  if (!user) {
-    return res.status(401).json({ message: "Usuário não encontrado." });
-  }
-  delete user.password;
-  return res.json(user);
+async function profile(req, res, db) {
+  db.query("SELECT * FROM user WHERE id = ?", [req.userId], async (err, result) => {
+    if (err) {
+      res.status(500).json({ message: "Internal Server Error" });
+      return
+    }
+    if (result.length === 0) {
+      res.status(401).json({ message: "Usuário não encontrado." });
+      return
+    }
+    const user = result[0];
+    delete user.password;
+    res.json(user);
+  })
 }
 
 module.exports = authController;
