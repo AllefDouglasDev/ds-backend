@@ -74,16 +74,16 @@ async function create(req, res, db) {
 
 async function remove(req, res, db) {
   const { id } = req.params;
-  const theUser = await db.user.findUnique({
-    where: { id: Number(id) },
+  db.query("DELETE FROM user WHERE id = ?", [id], (err, result) => {
+    if (err) {
+      res.status(500).json({ message: "Internal Server Error" });
+      return;
+    }
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "Usuário não encontrado." });
+    }
+    return res.sendStatus(204);
   });
-  if (!theUser) {
-    return res.status(404).json({ message: "Usuário não encontrado." });
-  }
-  await db.user.delete({
-    where: { id: Number(id) },
-  });
-  return res.sendStatus(204);
 }
 
 module.exports = userController;
