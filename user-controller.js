@@ -2,79 +2,88 @@ const bcrypt = require("bcrypt");
 const { Router } = require("express");
 const { verifyToken } = require("./jwt");
 
-function userController(prisma) {
+function userController(db) {
   const router = Router();
-  router.get("/", verifyToken, (req, res) => list(req, res, prisma));
-  router.post("/", verifyToken, (req, res) => create(req, res, prisma));
-  router.delete("/:id", verifyToken, (req, res) => remove(req, res, prisma));
+  router.get("/", verifyToken, (req, res) => list(req, res, db));
+  router.post("/", verifyToken, (req, res) => create(req, res, db));
+  router.delete("/:id", verifyToken, (req, res) => remove(req, res, db));
   return router;
 }
 
-async function list(req, res, prisma) {
-  const events = await prisma.user.findMany({ where: { type: { equals: req.query.type } }, include: { class: true } });
-  return res.json(events);
+async function list(req, res, db) {
+  db.query(
+    `
+    SELECT user.*, class.name AS className
+    FROM user  
+    LEFT JOIN class ON user.classId = class.id
+    WHERE type = ?`,
+    [req.query.type],
+    (err, result) => {
+      if (err) {
+        res.status(500).json({ message: "Internal Server Error" });
+        return;
+      }
+      res.json(
+        result.map(({ classId, className, ...item }) => ({
+          ...item,
+          class: className
+            ? {
+                id: classId,
+                name: className,
+              }
+            : undefined,
+        }))
+      );
+    }
+  );
 }
 
-async function create(req, res, prisma) {
+async function create(req, res, db) {
   const { name, email, type, password, classId } = req.body;
   const hashedPassword = await bcrypt.hash(password, 10);
-  if (type === 'student') {
-    try {
-      const existingClass = await prisma.class.findUnique({
-        where: {
-          id: classId,
-        },
-      });
-      if (!existingClass) {
-        return res.status(404).json({ message: "Classe  não encontrada." });
+  if (type === "student") {
+    db.query(
+      `INSERT INTO user (name, email, password, type, classId) VALUES (?, ?, ?, ?, ?)`,
+      [name, email.toLowerCase(), hashedPassword, type, classId],
+      (err, result) => {
+        if (err) {
+          res
+            .status(500)
+            .json({ message: "Internal Server Error", error: err.message });
+          return;
+        }
+        return res.status(201).json({ success: true });
       }
-      const theUser = await prisma.user.create({
-        data: {
-          name,
-          email: email.toLowerCase(),
-          password: hashedPassword, // Senha criptografada
-          type,
-          class: {
-            connect: {
-              id: classId,
-            },
-          },
-        },
-      });
-      return res.status(201).json(theUser);
-    } catch (error) {
-      return res.status(404).json({ message: "Error ao criar usuário" })
-    }
+    );
   } else {
-    try {
-      const theUser = await prisma.user.create({
-        data: {
-          name,
-          email: email.toLowerCase(),
-          password: hashedPassword, // Senha criptografada
-          type,
-        },
-      });
-      return res.status(201).json(theUser);
-    } catch (error) {
-      return res.status(404).json({ message: "Error ao criar usuário" })
-    }
+    db.query(
+      `INSERT INTO user (name, email, password, type) VALUES (?, ?, ?, ?)`,
+      [name, email.toLowerCase(), hashedPassword, type],
+      (err, result) => {
+        if (err) {
+          res
+            .status(500)
+            .json({ message: "Internal Server Error", error: err.message });
+          return;
+        }
+        return res.status(201).json({ success: true });
+      }
+    );
   }
 }
 
-async function remove(req, res, prisma) {
+async function remove(req, res, db) {
   const { id } = req.params;
-  const theUser = await prisma.user.findUnique({
+  const theUser = await db.user.findUnique({
     where: { id: Number(id) },
-  })
+  });
   if (!theUser) {
     return res.status(404).json({ message: "Usuário não encontrado." });
   }
-  await prisma.user.delete({
+  await db.user.delete({
     where: { id: Number(id) },
   });
   return res.sendStatus(204);
 }
 
 module.exports = userController;
-
