@@ -2,33 +2,33 @@ const { Router } = require("express");
 const { verifyToken } = require("./jwt");
 const { lunchSchedules } = require("./lunch-schedules");
 
-function scheduleController(prisma) {
+function scheduleController(db) {
   const router = Router();
-  router.get("/", verifyToken, (req, res) => list(req, res, prisma));
-  router.get("/lunch", verifyToken, (req, res) => listLunch(req, res, prisma));
+  router.get("/", verifyToken, (req, res) => list(req, res, db));
+  router.get("/lunch", verifyToken, (req, res) => listLunch(req, res, db));
   return router;
 }
 
-async function list(req, res, prisma) {
+async function list(req, res, db) {
   const userId = req.userId;
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    include: { class: true },
-  });
-  if (!user) {
-    console.error("User not found");
-    return [];
-  }
-  if (!user.class) {
-    console.error("User is not associated with any class");
-    return [];
-  }
-  const schedules = await prisma.schedule.findMany({
-    where: {
-      classId: user.class.id,
-    },
-  });
-  return res.json(transformSchedule(schedules));
+  db.query(
+    `
+   SELECT schedule.* FROM class
+   JOIN schedule ON schedule.classId = class.id
+   JOIN user ON class.id = user.classId
+   WHERE user.id = ?
+    `,
+    [userId],
+    (err, result) => {
+      if (err) {
+        res
+          .status(500)
+          .json({ message: "Internal Server Error", error: err.message });
+        return;
+      }
+      return res.json(transformSchedule(result));
+    }
+  );
 }
 
 function listLunch(req, res) {
