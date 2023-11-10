@@ -23,7 +23,7 @@ async function list(req, res, prisma) {
     where: { id: userId },
     include: { class: true },
   });
-  if (user.type === "teacher") {
+  if (user.type === "teacher" || user.type === 'principal') {
     const tasks = await prisma.task.findMany({
       where: {
         teacherId: userId,
@@ -123,7 +123,7 @@ async function create(req, res, prisma) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
   });
-  if (user.type !== "teacher") {
+  if (user.type !== "teacher" && user.type !== 'principal') {
     return res
       .status(403)
       .json({ message: "Apenas professores podem criar tarefas." });
@@ -156,15 +156,14 @@ async function createDoubt(req, res, prisma) {
   const data = {
     taskId: Number(id),
     message,
+    type: user.type,
   };
   if (user.type === "student") {
     data.studentId = userId;
     data.teacherId = to;
-    data.type = "student";
   } else {
     data.teacherId = userId;
     data.studentId = to;
-    data.type = "teacher";
   }
   await prisma.doubt.create({ data });
   return res.send(204);

@@ -18,6 +18,9 @@ async function list(req, res, prisma) {
 async function create(req, res, prisma) {
   const { name, email, type, password, classId } = req.body;
   const hashedPassword = await bcrypt.hash(password, 10);
+  if (type !== 'student' && type !== 'teacher') {
+    return res.status(400).json({ message: "Tipo de usuário inválido." });
+  }
   if (type === 'student') {
     try {
       const existingClass = await prisma.class.findUnique({
@@ -33,7 +36,7 @@ async function create(req, res, prisma) {
           name,
           email: email.toLowerCase(),
           password: hashedPassword, // Senha criptografada
-          type,
+          type: 'student',
           class: {
             connect: {
               id: classId,
@@ -52,7 +55,7 @@ async function create(req, res, prisma) {
           name,
           email: email.toLowerCase(),
           password: hashedPassword, // Senha criptografada
-          type,
+          type: 'teacher',
         },
       });
       return res.status(201).json(theUser);

@@ -15,7 +15,7 @@ model User {
     name          String
     email         String     @unique
     password      String
-    type          String // 'teacher' or 'student'
+    type          String
     class         Class?     @relation(fields: [classId], references: [id])
     classId       Int?
     studentDoubts Doubt[]    @relation("StudentDoubt")

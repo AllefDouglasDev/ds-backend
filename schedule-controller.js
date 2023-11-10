@@ -16,11 +16,9 @@ async function list(req, res, prisma) {
     include: { class: true },
   });
   if (!user) {
-    console.error("User not found");
     return [];
   }
   if (!user.class) {
-    console.error("User is not associated with any class");
     return [];
   }
   const schedules = await prisma.schedule.findMany({

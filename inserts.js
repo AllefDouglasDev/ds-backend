@@ -88,6 +88,27 @@ async function createTeacher() {
   }
 }
 
+async function createPrincipal() {
+  const email = "diretor@email.com";
+  const password = "123"; // Senha não criptografada
+  const hashedPassword = await bcrypt.hash(password, 10);
+  try {
+    const student = await prisma.user.create({
+      data: {
+        name: "Jorge da Silva",
+        email,
+        password: hashedPassword, // Senha criptografada
+        type: "principal",
+      },
+    });
+    console.log("Diretor criado com sucesso:", student);
+  } catch (error) {
+    console.error("Erro ao criar o diretor:", error);
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
 async function createSchedule() {
   try {
     const subjects = [
@@ -142,6 +163,7 @@ async function main() {
   await createClasses();
   await createStudent();
   await createTeacher();
+  await createPrincipal();
   await createSchedule();
 }
 
